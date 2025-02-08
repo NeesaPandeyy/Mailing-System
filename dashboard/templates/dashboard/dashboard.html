@@ -1,0 +1,139 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row" style="height: 85vh;">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 bg-dark text-white p-4 d-flex flex-column">
+                <button type="button" class="btn btn-outline-light w-100 mb-3" data-bs-toggle="modal" data-bs-target="#mailModal">Compose</button>
+                {% if request.user.role == 'admin' %}
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="d-block p-3 text-white">Inbox</a></li>
+                        <li><a href="#" class="d-block p-3 text-white">Sent</a></li>
+                        <li><a href="#" class="d-block p-3 text-white">Drafts</a></li>
+                    </ul>
+                {% elif request.user.role == 'customer' %}
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="d-block p-3 text-white">Sent</a></li>
+                        <li><a href="#" class="d-block p-3 text-white">Drafts</a></li>
+                    </ul>
+                {% endif %}
+            </div>
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 p-5 bg-light" style="overflow-y: auto;">
+                <div class="container text-center d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="text-primary fw-bold">Welcome to Your Dashboard</h1>
+                    <h5 class="text-muted">Role: <span class="badge bg-primary">{{ request.user.role|title }}</span></h5>
+                </div>
+                
+                <div class="topbar d-flex justify-content-between align-items-center p-3 bg-white shadow rounded mb-4">
+                    <h3 class="text-dark m-0">
+                        {% if request.user.role == 'admin' %}
+                            Primary Inbox
+                        {% elif request.user.role == 'customer' %}
+                            Sent Messages
+                        {% else %}
+                            Dashboard
+                        {% endif %}
+                    </h3>
+                    <div class="d-flex">
+                        <input type="text" id="email-search" class="form-control w-30" placeholder="Search emails..." onkeyup="searchEmails()">
+                    </div>
+                </div>
+
+                <!-- Emails List -->
+                <div class="email-list" style="max-height: 60vh; overflow-y: auto;">
+                    {% for message in messages %}
+                        <div class="card p-3 mb-3 shadow-sm email-item" data-sender="{{ message.sender.username }}" data-email="{{ message.sender.email }}">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <a href="#" class="subject" onclick="toggleSenderDetails('{{ message.id }}')">
+                                        <strong>{{ message.subject }}</strong>
+                                    </a>
+                                </div>
+                                <div class="col-md-4">
+                                    <p class="text-muted mb-0">{{ message.content }}</p>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <small class="text-muted">{{ message.timestamp|date:"h:i A, d M" }}</small>
+                                </div>
+                            </div>
+                            <div id="sender-details-{{ message.id }}" class="sender-details" style="display: none;">
+                                <div class="card-body">
+                                    <strong>Sender: </strong>{{ message.sender.username }} <br>
+                                    <strong>Email: </strong>{{ message.sender.email }}
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p>No messages yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Send Mail Form -->
+    <div class="modal fade" id="mailModal" tabindex="-1" aria-labelledby="mailModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mailModalLabel">Send Mail</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{% url 'compose' %}" method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="toEmail" class="form-label">To</label>
+                            <select class="form-select" id="toEmail" name="toEmail" required>
+                                <option value="" disabled selected>Select an Admin</option>
+                                {% for admin in admins %}
+                                    <option value="{{ admin.email }}">{{ admin.email }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fromEmail" class="form-label">From</label>
+                            <input type="email" class="form-control" id="fromEmail" name="fromEmail" placeholder="Your email" value="{{ request.user.email }}" required disabled>
+                        </div>                        
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="subject" name="subject" placeholder="Enter subject" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Mail Content</label>
+                            <textarea class="form-control" id="message" name="message" rows="5" placeholder="Write your message..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Send Mail</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Functions -->
+    <script type="text/javascript">
+        function searchEmails() {
+            var searchInput = document.getElementById("email-search").value.toLowerCase();
+            var emailItems = document.getElementsByClassName("email-item");
+            
+            for (var i = 0; i < emailItems.length; i++) {
+                var sender = emailItems[i].getAttribute("data-sender").toLowerCase();
+                var email = emailItems[i].getAttribute("data-email").toLowerCase();
+                
+                if (sender.includes(searchInput) || email.includes(searchInput)) {
+                    emailItems[i].style.display = "";
+                } else {
+                    emailItems[i].style.display = "none";
+                }
+            }
+        }
+
+        function toggleSenderDetails(messageId) {
+            var senderDetails = document.getElementById("sender-details-" + messageId);
+            senderDetails.style.display = senderDetails.style.display === "none" ? "block" : "none";
+        }
+    </script>
+
+{% endblock content %}

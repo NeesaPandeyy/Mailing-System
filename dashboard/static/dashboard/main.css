@@ -1,0 +1,12 @@
+.bg-image {
+    background: url("{% static 'dashboard/images/background.png' %}") no-repeat center center fixed;
+    background-size:contain;
+    height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+
+

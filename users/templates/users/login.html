@@ -1,0 +1,10 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+    <h2>Login</h2>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-dark mr-4">Login</button>
+        <p>Don't have an account? <a href="{% url 'user-register' %}">Register</a></p>
+    </form>
+{% endblock content %}
